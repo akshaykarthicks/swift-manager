@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,9 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Priority, Task } from "@/types";
-import { taskStore, userStore } from "@/lib/store";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
 
 interface TaskDialogProps {
   isOpen: boolean;
@@ -33,9 +34,38 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState<Array<{ id: string; name: string; avatar?: string }>>([]);
   
-  const users = userStore.getUsers();
   const isEditing = !!task;
+  
+  // Fetch users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url');
+          
+        if (error) {
+          console.error("Error fetching users:", error);
+          return;
+        }
+        
+        if (data) {
+          const formattedUsers = data.map(user => ({
+            id: user.id,
+            name: user.name || 'Anonymous',
+            avatar: user.avatar_url || undefined
+          }));
+          setUsers(formattedUsers);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching users:", err);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
   
   useEffect(() => {
     if (task) {
@@ -44,7 +74,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       setStatus(task.status);
       setPriority(task.priority);
       setAssigneeId(task.assignedTo);
-      setDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
+      setDueDate(task.dueDate);
     } else {
       // Default values for new task
       setTitle("");
@@ -56,51 +86,111 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
     }
   }, [task]);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to perform this action",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-      
+      // Prepare task data for Supabase (snake_case)
       const taskData = {
         title,
-        description: description || undefined,
-        status: status as "todo" | "in-progress" | "review" | "completed",
+        description: description || null,
+        status,
         priority,
-        assignedTo: assigneeId,
-        dueDate,
-        createdBy: user.id,
+        assigned_to: assigneeId || null,
+        due_date: dueDate ? dueDate.toISOString() : null,
+        created_by: user.id,
+        tags: []
       };
       
       let savedTask: Task | undefined;
       
       if (isEditing && task) {
         // Update existing task
-        savedTask = taskStore.updateTask(task.id, taskData);
-        if (savedTask) {
-          toast({
-            title: "Task updated",
-            description: "Task has been updated successfully.",
-          });
-          onTaskSaved(savedTask);
+        const { data, error } = await supabase
+          .from('tasks')
+          .update({
+            ...taskData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', task.id)
+          .select()
+          .single();
+        
+        if (error) {
+          throw error;
         }
+        
+        // Convert to our Task type
+        savedTask = {
+          id: data.id,
+          title: data.title,
+          description: data.description || undefined,
+          status: data.status,
+          priority: data.priority,
+          assignedTo: data.assigned_to || undefined,
+          createdBy: data.created_by,
+          dueDate: data.due_date ? new Date(data.due_date) : undefined,
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at),
+          tags: data.tags || [],
+        };
+        
+        toast({
+          title: "Task updated",
+          description: "Task has been updated successfully.",
+        });
       } else {
         // Create new task
-        savedTask = taskStore.createTask(taskData);
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert(taskData)
+          .select()
+          .single();
+          
+        if (error) {
+          throw error;
+        }
+        
+        // Convert to our Task type
+        savedTask = {
+          id: data.id,
+          title: data.title,
+          description: data.description || undefined,
+          status: data.status,
+          priority: data.priority,
+          assignedTo: data.assigned_to || undefined,
+          createdBy: data.created_by,
+          dueDate: data.due_date ? new Date(data.due_date) : undefined,
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at),
+          tags: data.tags || [],
+        };
+        
         toast({
           title: "Task created",
           description: "New task has been created successfully.",
         });
+      }
+      
+      if (savedTask) {
         onTaskSaved(savedTask);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving task:", error);
       toast({
         title: "Error",
-        description: "Failed to save task. Please try again.",
+        description: error.message || "Failed to save task. Please try again.",
         variant: "destructive",
       });
     } finally {

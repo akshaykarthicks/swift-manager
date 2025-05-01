@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus } from "lucide-react";
 import { TaskDialog } from "./TaskDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TaskListProps {
   tasks: Task[];
   title?: string;
   emptyMessage?: string;
   showFilters?: boolean;
+  isLoading?: boolean;
   onTaskAdded?: (task: Task) => void;
 }
 
@@ -21,6 +23,7 @@ export const TaskList = ({
   title = "Tasks",
   emptyMessage = "No tasks found",
   showFilters = true,
+  isLoading = false,
   onTaskAdded,
 }: TaskListProps) => {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -54,6 +57,23 @@ export const TaskList = ({
     setSelectedTask(null);
     setIsTaskDialogOpen(true);
   };
+
+  // Loading skeletons
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="rounded-lg border bg-white p-4 shadow-sm">
+          <Skeleton className="h-6 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-full mb-1" />
+          <Skeleton className="h-4 w-2/3 mb-6" />
+          <div className="flex justify-between">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   
   return (
     <div>
@@ -78,12 +98,13 @@ export const TaskList = ({
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={isLoading}
               />
             </div>
           </div>
           
           <div className="flex gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isLoading}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -96,7 +117,7 @@ export const TaskList = ({
               </SelectContent>
             </Select>
             
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter} disabled={isLoading}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
@@ -111,7 +132,9 @@ export const TaskList = ({
         </div>
       )}
       
-      {filteredTasks.length > 0 ? (
+      {isLoading ? (
+        renderSkeletons()
+      ) : filteredTasks.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTasks.map((task) => (
             <TaskCard key={task.id} task={task} onClick={() => handleTaskClick(task)} />
@@ -132,7 +155,7 @@ export const TaskList = ({
         task={selectedTask}
         onTaskSaved={(task) => {
           setIsTaskDialogOpen(false);
-          onTaskAdded?.(task);
+          if (onTaskAdded) onTaskAdded(task);
         }}
       />
     </div>
