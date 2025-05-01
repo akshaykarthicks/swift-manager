@@ -29,7 +29,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<string>("todo");
+  const [status, setStatus] = useState<"todo" | "in-progress" | "review" | "completed">("todo");
   const [priority, setPriority] = useState<Priority>("medium");
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
@@ -105,12 +105,12 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       const taskData = {
         title,
         description: description || null,
-        status,
+        status: status,
         priority,
         assigned_to: assigneeId || null,
         due_date: dueDate ? dueDate.toISOString() : null,
         created_by: user.id,
-        tags: []
+        tags: [] as string[]
       };
       
       let savedTask: Task | undefined;
@@ -232,7 +232,10 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select 
+                  value={status} 
+                  onValueChange={(value: "todo" | "in-progress" | "review" | "completed") => setStatus(value)}
+                >
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>

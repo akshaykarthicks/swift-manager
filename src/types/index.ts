@@ -4,7 +4,7 @@ export type User = {
   name: string;
   email: string;
   avatar?: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'manager' | 'member';
 };
 
 export type Priority = 'low' | 'medium' | 'high';
