@@ -68,20 +68,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Try to get the user from Supabase session on initial load
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userData = await extractUserFromSession(session);
-        setUser(userData);
-        
-        // Set up auth subscription
-        const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+        // Set up auth subscription first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
+            console.log("Auth state changed:", event);
             const userData = await extractUserFromSession(session);
             setUser(userData);
           }
         );
+        
+        // Then check current session
+        const { data: { session } } = await supabase.auth.getSession();
+        const userData = await extractUserFromSession(session);
+        setUser(userData);
         
         // Clean up subscription on unmount
         return () => {
@@ -207,7 +208,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated: !!user, 
+      login, 
+      signup, 
+      logout, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

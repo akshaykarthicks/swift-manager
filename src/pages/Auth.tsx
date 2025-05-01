@@ -1,19 +1,40 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Extract tab from URL pathname
+  useEffect(() => {
+    if (location.pathname === '/signup') {
+      setActiveTab('signup');
+    } else {
+      setActiveTab('login');
+    }
+  }, [location.pathname]);
 
-  // Redirect to dashboard if already authenticated
+  // Extract redirect path from location state
+  const from = location.state?.from || '/';
+
+  // Redirect to dashboard or previous page if already authenticated
   if (isAuthenticated) {
-    return <Navigate to="/" />;
+    return <Navigate to={from} replace />;
   }
+
+  // Handle tab change with URL navigation
+  const handleTabChange = (value: string) => {
+    const newTab = value as "login" | "signup";
+    setActiveTab(newTab);
+    navigate(newTab === "login" ? "/login" : "/signup", { state: { from } });
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50 p-4 items-center justify-center">
@@ -23,7 +44,7 @@ const Auth = () => {
           <p className="text-slate-500">Manage your tasks efficiently</p>
         </div>
         
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "signup")}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="login">Log In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>

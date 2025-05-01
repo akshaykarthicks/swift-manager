@@ -61,7 +61,9 @@ const MyTasks = () => {
   };
   
   useEffect(() => {
-    fetchMyTasks();
+    if (user) {
+      fetchMyTasks();
+    }
   }, [user]);
   
   const handleTaskAdded = () => {

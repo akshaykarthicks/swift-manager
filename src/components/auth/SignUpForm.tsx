@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -18,6 +18,8 @@ export const SignUpForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,21 +45,7 @@ export const SignUpForm = () => {
     setIsLoading(true);
 
     try {
-      const user = await signup({ email, password, name });
-      if (!user) {
-        toast({
-          title: "Signup failed",
-          description: "Could not create account. Email may already be in use.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      toast({
-        title: "Signup failed",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      await signup({ email, password, name });
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +141,7 @@ export const SignUpForm = () => {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-center text-gray-500">
-          Already have an account? <Link to="/login" className="text-primary font-semibold hover:underline">Log In</Link>
+          Already have an account? <Link to="/login" state={{ from }} className="text-primary font-semibold hover:underline">Log In</Link>
         </p>
       </CardFooter>
     </Card>

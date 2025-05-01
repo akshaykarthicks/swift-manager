@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Priority, Task } from "@/types";
+import { Priority, Task, TaskStatus } from "@/types";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +29,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<"todo" | "in-progress" | "review" | "completed">("todo");
+  const [status, setStatus] = useState<TaskStatus>("todo");
   const [priority, setPriority] = useState<Priority>("medium");
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
@@ -105,8 +105,8 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       const taskData = {
         title,
         description: description || null,
-        status: status,
-        priority,
+        status: status as "todo" | "in-progress" | "review" | "completed", // Ensure correct typing
+        priority: priority as "low" | "medium" | "high", // Ensure correct typing
         assigned_to: assigneeId || null,
         due_date: dueDate ? dueDate.toISOString() : null,
         created_by: user.id,
@@ -159,6 +159,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
           .single();
           
         if (error) {
+          console.error("Error creating task:", error);
           throw error;
         }
         
@@ -234,7 +235,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                 <Label htmlFor="status">Status</Label>
                 <Select 
                   value={status} 
-                  onValueChange={(value: "todo" | "in-progress" | "review" | "completed") => setStatus(value)}
+                  onValueChange={(value: TaskStatus) => setStatus(value)}
                 >
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Select status" />
@@ -250,7 +251,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
               
               <div className="space-y-2">
                 <Label htmlFor="priority">Priority</Label>
-                <Select value={priority} onValueChange={(value) => setPriority(value as Priority)}>
+                <Select value={priority} onValueChange={(value: Priority) => setPriority(value)}>
                   <SelectTrigger id="priority">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -266,12 +267,12 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="assignee">Assignee</Label>
-                <Select value={assigneeId} onValueChange={setAssigneeId}>
+                <Select value={assigneeId || ""} onValueChange={setAssigneeId}>
                   <SelectTrigger id="assignee">
                     <SelectValue placeholder="Select assignee" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         <div className="flex items-center gap-2">

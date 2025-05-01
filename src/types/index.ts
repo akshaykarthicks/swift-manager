@@ -9,11 +9,13 @@ export type User = {
 
 export type Priority = 'low' | 'medium' | 'high';
 
+export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'completed';
+
 export type Task = {
   id: string;
   title: string;
   description?: string;
-  status: 'todo' | 'in-progress' | 'review' | 'completed';
+  status: TaskStatus;
   priority: Priority;
   assignedTo?: string; // User ID
   createdBy: string; // User ID

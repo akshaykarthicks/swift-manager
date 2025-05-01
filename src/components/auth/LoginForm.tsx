@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
 export const LoginForm = () => {
@@ -16,6 +16,8 @@ export const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +96,11 @@ export const LoginForm = () => {
       <CardFooter className="flex flex-col space-y-4">
         <p className="text-sm text-center">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-primary font-semibold hover:underline">
+          <Link 
+            to="/signup" 
+            state={{ from }} 
+            className="text-primary font-semibold hover:underline"
+          >
             Sign up
           </Link>
         </p>

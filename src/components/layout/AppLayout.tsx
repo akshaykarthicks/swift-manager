@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { initStore } from "@/lib/store";
 
 interface AppLayoutProps {
@@ -13,6 +13,7 @@ interface AppLayoutProps {
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const { isAuthenticated, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
   
   useEffect(() => {
     // Initialize the store with mock data
@@ -28,7 +29,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location.pathname }} />;
   }
 
   return (
