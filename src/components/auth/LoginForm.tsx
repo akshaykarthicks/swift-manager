@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');

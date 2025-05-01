@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Priority, Task } from "@/types";
 import { taskStore, userStore } from "@/lib/store";
 import { useAuth } from "@/components/auth/AuthContext";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskDialogProps {
   isOpen: boolean;
