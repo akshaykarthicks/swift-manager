@@ -5,10 +5,17 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
+interface SignupData {
+  email: string;
+  password: string;
+  name: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<User | null>;
+  signup: (data: SignupData) => Promise<User | null>;
   logout: () => void;
   loading: boolean;
 }
@@ -17,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   login: async () => null,
+  signup: async () => null,
   logout: () => {},
   loading: true
 });
@@ -123,6 +131,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   };
 
+  const signup = async (data: SignupData): Promise<User | null> => {
+    const { email, password, name } = data;
+    
+    try {
+      // Create the user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
+      
+      if (authError) {
+        toast({
+          title: "Signup failed",
+          description: authError.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      // If we need to wait for email confirmation, show a different message
+      if (authData.user && !authData.session) {
+        toast({
+          title: "Verification required",
+          description: "Please check your email to verify your account before logging in.",
+        });
+        return null;
+      }
+      
+      // If auto sign-in is enabled, we'll have a session
+      const userData = await extractUserFromSession(authData.session);
+      
+      if (userData) {
+        setUser(userData);
+        toast({
+          title: "Account created successfully",
+          description: `Welcome, ${userData.name}!`,
+        });
+        return userData;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -142,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

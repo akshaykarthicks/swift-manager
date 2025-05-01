@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { Navigate } from "react-router-dom";
 import { initStore } from "@/lib/store";
 
 interface AppLayoutProps {
@@ -28,11 +28,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   }
 
   if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-        <LoginForm />
-      </div>
-    );
+    return <Navigate to="/login" />;
   }
 
   return (

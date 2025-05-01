@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import MyTasks from "./pages/MyTasks";
@@ -12,6 +12,7 @@ import AllTasks from "./pages/AllTasks";
 import UpcomingTasks from "./pages/UpcomingTasks";
 import TeamView from "./pages/TeamView";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Auth />} />
+            <Route path="/signup" element={<Auth />} />
             <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/my-tasks" element={<AppLayout><MyTasks /></AppLayout>} />
             <Route path="/tasks" element={<AppLayout><AllTasks /></AppLayout>} />
