@@ -18,7 +18,7 @@ interface AuthContextType {
   signup: (data: SignupData) => Promise<User | null>;
   logout: () => void;
   loading: boolean;
-  updateUser: (updatedUser: User) => void; // Add the missing updateUser property
+  updateUser: (updatedUser: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   signup: async () => null,
   logout: () => {},
   loading: true,
-  updateUser: () => {} // Add default implementation
+  updateUser: () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -72,13 +72,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Set loading to true when starting auth initialization
+        setLoading(true);
+        
         // Set up auth subscription first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log("Auth state changed:", event);
             const userData = await extractUserFromSession(session);
             setUser(userData);
-            setLoading(false); // Make sure to set loading to false after auth state changes
+            setLoading(false);
           }
         );
         
@@ -86,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         const userData = await extractUserFromSession(session);
         setUser(userData);
-        setLoading(false); // Make sure to set loading to false after initial session check
+        setLoading(false);
         
         // Clean up subscription on unmount
         return () => {
@@ -94,20 +97,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       } catch (error) {
         console.error("Error initializing auth:", error);
-        setLoading(false); // Also set loading to false if there's an error
+        setLoading(false);
       }
     };
 
     initAuth();
   }, []);
 
-  // Add updateUser implementation
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
   };
 
   const login = async (email: string, password: string): Promise<User | null> => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
@@ -116,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
         return null;
       }
       
@@ -136,6 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
     return null;
   };
@@ -144,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { email, password, name } = data;
     
     try {
+      setLoading(true);
       // Create the user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -194,11 +201,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
       toast({
@@ -212,6 +222,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -223,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signup, 
       logout, 
       loading,
-      updateUser // Add updateUser to the context provider
+      updateUser
     }}>
       {children}
     </AuthContext.Provider>

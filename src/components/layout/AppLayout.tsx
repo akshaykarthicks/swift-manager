@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { initStore } from "@/lib/store";
 import { Loader2 } from "lucide-react";
 
@@ -16,6 +16,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [storeInitialized, setStoreInitialized] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Initialize the store with mock data
@@ -26,16 +27,18 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   // Show loading spinner while auth is initializing
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <span className="ml-2 text-lg text-slate-600">Loading...</span>
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center justify-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <span className="text-lg font-medium text-slate-600">Loading application...</span>
+        </div>
       </div>
     );
   }
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   return (

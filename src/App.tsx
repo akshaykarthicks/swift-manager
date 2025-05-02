@@ -14,13 +14,16 @@ import TeamView from "./pages/TeamView";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
-import Index from "./pages/Index";
+import { Suspense, lazy } from "react";
 
+// Configure QueryClient with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 60000, // 1 minute
+      cacheTime: 300000, // 5 minutes
     },
   },
 });
@@ -32,18 +35,24 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Auth />} />
-            <Route path="/signup" element={<Auth />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
-            <Route path="/my-tasks" element={<AppLayout><MyTasks /></AppLayout>} />
-            <Route path="/tasks" element={<AppLayout><AllTasks /></AppLayout>} />
-            <Route path="/upcoming" element={<AppLayout><UpcomingTasks /></AppLayout>} />
-            <Route path="/team" element={<AppLayout><TeamView /></AppLayout>} />
-            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={
+            <div className="flex h-screen w-screen items-center justify-center">
+              <div className="text-lg">Loading...</div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/login" element={<Auth />} />
+              <Route path="/signup" element={<Auth />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+              <Route path="/my-tasks" element={<AppLayout><MyTasks /></AppLayout>} />
+              <Route path="/tasks" element={<AppLayout><AllTasks /></AppLayout>} />
+              <Route path="/upcoming" element={<AppLayout><UpcomingTasks /></AppLayout>} />
+              <Route path="/team" element={<AppLayout><TeamView /></AppLayout>} />
+              <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
