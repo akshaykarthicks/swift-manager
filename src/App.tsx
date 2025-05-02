@@ -14,8 +14,16 @@ import TeamView from "./pages/TeamView";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
+import Index from "./pages/Index";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,7 +35,8 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
-            <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/my-tasks" element={<AppLayout><MyTasks /></AppLayout>} />
             <Route path="/tasks" element={<AppLayout><AllTasks /></AppLayout>} />
             <Route path="/upcoming" element={<AppLayout><UpcomingTasks /></AppLayout>} />

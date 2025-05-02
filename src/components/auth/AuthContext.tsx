@@ -78,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log("Auth state changed:", event);
             const userData = await extractUserFromSession(session);
             setUser(userData);
+            setLoading(false); // Make sure to set loading to false after auth state changes
           }
         );
         
@@ -85,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         const userData = await extractUserFromSession(session);
         setUser(userData);
+        setLoading(false); // Make sure to set loading to false after initial session check
         
         // Clean up subscription on unmount
         return () => {
@@ -92,8 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       } catch (error) {
         console.error("Error initializing auth:", error);
-      } finally {
-        setLoading(false);
+        setLoading(false); // Also set loading to false if there's an error
       }
     };
 
