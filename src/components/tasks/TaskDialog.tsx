@@ -42,6 +42,8 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
+      if (!isOpen) return;
+      
       setIsLoadingUsers(true);
       try {
         const { data, error } = await supabase
@@ -59,6 +61,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
         }
         
         if (data) {
+          console.log("Fetched users:", data);
           const formattedUsers = data.map(user => ({
             id: user.id,
             name: user.name || 'Anonymous',
@@ -73,9 +76,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       }
     };
     
-    if (isOpen) {
-      fetchUsers();
-    }
+    fetchUsers();
   }, [isOpen, toast]);
   
   useEffect(() => {
@@ -278,7 +279,10 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="assignee">Assignee</Label>
-                <Select value={assigneeId || "unassigned"} onValueChange={setAssigneeId}>
+                <Select 
+                  value={assigneeId || "unassigned"} 
+                  onValueChange={(value) => setAssigneeId(value === "unassigned" ? undefined : value)}
+                >
                   <SelectTrigger id="assignee" className="truncate">
                     <SelectValue placeholder={isLoadingUsers ? "Loading users..." : "Select assignee"} />
                   </SelectTrigger>

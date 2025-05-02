@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, Menu, X, Search } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { notificationStore } from "@/lib/store";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -17,6 +19,8 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const unreadCount = notificationStore.getUnreadCount();
 
@@ -24,6 +28,24 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     e.preventDefault();
     console.log("Search:", searchQuery);
     // In a real app, this would trigger a search
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -83,7 +105,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer" onClick={logout}>
+              <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
