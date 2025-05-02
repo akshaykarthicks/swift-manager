@@ -34,6 +34,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [users, setUsers] = useState<Array<{ id: string; name: string; avatar?: string }>>([]);
   
   const isEditing = !!task;
@@ -41,6 +42,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoadingUsers(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -48,6 +50,11 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
           
         if (error) {
           console.error("Error fetching users:", error);
+          toast({
+            title: "Error fetching users",
+            description: error.message,
+            variant: "destructive",
+          });
           return;
         }
         
@@ -61,11 +68,15 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
         }
       } catch (err) {
         console.error("Unexpected error fetching users:", err);
+      } finally {
+        setIsLoadingUsers(false);
       }
     };
     
-    fetchUsers();
-  }, []);
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [isOpen, toast]);
   
   useEffect(() => {
     if (task) {
@@ -105,8 +116,8 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       const taskData = {
         title,
         description: description || null,
-        status: status as "todo" | "in-progress" | "review" | "completed", // Ensure correct typing
-        priority: priority as "low" | "medium" | "high", // Ensure correct typing
+        status: status as TaskStatus,
+        priority: priority as Priority,
         assigned_to: assigneeId || null,
         due_date: dueDate ? dueDate.toISOString() : null,
         created_by: user.id,
@@ -267,9 +278,9 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="assignee">Assignee</Label>
-                <Select value={assigneeId || ""} onValueChange={setAssigneeId}>
-                  <SelectTrigger id="assignee">
-                    <SelectValue placeholder="Select assignee" />
+                <Select value={assigneeId || "unassigned"} onValueChange={setAssigneeId}>
+                  <SelectTrigger id="assignee" className="truncate">
+                    <SelectValue placeholder={isLoadingUsers ? "Loading users..." : "Select assignee"} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
@@ -278,9 +289,9 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarImage src={user.avatar} />
-                            <AvatarFallback>{user.name[0]}</AvatarFallback>
+                            <AvatarFallback>{user.name?.[0] || '?'}</AvatarFallback>
                           </Avatar>
-                          <span>{user.name}</span>
+                          <span className="truncate">{user.name}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -305,7 +316,12 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+                    <Calendar 
+                      mode="single" 
+                      selected={dueDate} 
+                      onSelect={(date) => setDueDate(date)}
+                      initialFocus 
+                    />
                   </PopoverContent>
                 </Popover>
               </div>

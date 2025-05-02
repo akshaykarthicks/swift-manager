@@ -13,6 +13,7 @@ import UpcomingTasks from "./pages/UpcomingTasks";
 import TeamView from "./pages/TeamView";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/tasks" element={<AppLayout><AllTasks /></AppLayout>} />
             <Route path="/upcoming" element={<AppLayout><UpcomingTasks /></AppLayout>} />
             <Route path="/team" element={<AppLayout><TeamView /></AppLayout>} />
+            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,13 +1,17 @@
 
 import { useState } from "react";
 import { TaskCard } from "./TaskCard";
-import { Task } from "@/types";
+import { Task, Priority, TaskStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Filter } from "lucide-react";
 import { TaskDialog } from "./TaskDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { format, isAfter, isBefore, isToday } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
 
 interface TaskListProps {
   tasks: Task[];
@@ -31,6 +35,8 @@ export const TaskList = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [dueDateFilter, setDueDateFilter] = useState<Date | undefined>(undefined);
+  const [dueDateType, setDueDateType] = useState("all"); // "all", "before", "after", "on"
   
   // Filter tasks based on search query and filters
   const filteredTasks = tasks.filter(task => {
@@ -45,7 +51,21 @@ export const TaskList = ({
     // Priority filter
     const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
     
-    return matchesSearch && matchesStatus && matchesPriority;
+    // Due date filter
+    let matchesDueDate = true;
+    if (dueDateFilter && task.dueDate) {
+      const taskDate = new Date(task.dueDate);
+      
+      if (dueDateType === "before") {
+        matchesDueDate = isBefore(taskDate, dueDateFilter);
+      } else if (dueDateType === "after") {
+        matchesDueDate = isAfter(taskDate, dueDateFilter);
+      } else if (dueDateType === "on") {
+        matchesDueDate = isToday(taskDate);
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesPriority && matchesDueDate;
   });
   
   const handleTaskClick = (task: Task) => {
@@ -56,6 +76,14 @@ export const TaskList = ({
   const handleNewTask = () => {
     setSelectedTask(null);
     setIsTaskDialogOpen(true);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setPriorityFilter("all");
+    setDueDateFilter(undefined);
+    setDueDateType("all");
   };
 
   // Loading skeletons
@@ -103,7 +131,7 @@ export const TaskList = ({
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isLoading}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="Status" />
@@ -128,6 +156,53 @@ export const TaskList = ({
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[130px] justify-between">
+                  <span>Due Date</span>
+                  <Filter className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="end">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Filter type</Label>
+                    <Select value={dueDateType} onValueChange={setDueDateType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All dates</SelectItem>
+                        <SelectItem value="before">Before</SelectItem>
+                        <SelectItem value="after">After</SelectItem>
+                        <SelectItem value="on">Today</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {dueDateType !== "all" && dueDateType !== "on" && (
+                    <div className="space-y-2">
+                      <Label>Select date</Label>
+                      <Calendar
+                        mode="single"
+                        selected={dueDateFilter}
+                        onSelect={setDueDateFilter}
+                        initialFocus
+                      />
+                    </div>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleClearFilters}
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       )}
