@@ -18,6 +18,7 @@ interface AuthContextType {
   signup: (data: SignupData) => Promise<User | null>;
   logout: () => void;
   loading: boolean;
+  updateUser: (updatedUser: User) => void; // Add the missing updateUser property
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,7 +27,8 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => null,
   signup: async () => null,
   logout: () => {},
-  loading: true
+  loading: true,
+  updateUser: () => {} // Add default implementation
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -97,6 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
   }, []);
+
+  // Add updateUser implementation
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
 
   const login = async (email: string, password: string): Promise<User | null> => {
     try {
@@ -214,7 +221,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login, 
       signup, 
       logout, 
-      loading 
+      loading,
+      updateUser // Add updateUser to the context provider
     }}>
       {children}
     </AuthContext.Provider>
