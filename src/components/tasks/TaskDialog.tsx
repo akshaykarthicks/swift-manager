@@ -46,6 +46,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       
       setIsLoadingUsers(true);
       try {
+        // Fetch all available users from the profiles table
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, avatar_url');
@@ -79,6 +80,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
     fetchUsers();
   }, [isOpen, toast]);
   
+  // Set initial values when editing a task
   useEffect(() => {
     if (task) {
       setTitle(task.title);
@@ -286,7 +288,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                   <SelectTrigger id="assignee" className="truncate">
                     <SelectValue placeholder={isLoadingUsers ? "Loading users..." : "Select assignee"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60">
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
