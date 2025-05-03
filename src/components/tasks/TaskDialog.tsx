@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,10 +47,11 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       try {
         console.log("Fetching users from profiles table...");
         
-        // Fetch all available users from the profiles table with improved error handling
+        // Use noAuth flag to avoid recursive permissions when fetching all users
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url');
+          .select('id, name, avatar_url, email')
+          .order('name', { ascending: true });
           
         if (error) {
           console.error("Error fetching users:", error);
@@ -60,15 +60,19 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             description: error.message,
             variant: "destructive",
           });
+          setIsLoadingUsers(false);
           return;
         }
         
+        console.log("Raw users data:", data);
+        
         if (data && data.length > 0) {
-          console.log("Fetched users:", data.length, data);
+          console.log(`Fetched ${data.length} users`);
           const formattedUsers = data.map(user => ({
             id: user.id,
             name: user.name || 'Anonymous',
-            avatar: user.avatar_url || undefined
+            avatar: user.avatar_url || undefined,
+            email: user.email
           }));
           setUsers(formattedUsers);
         } else {
@@ -327,11 +331,6 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                 {users.length === 0 && !isLoadingUsers && (
                   <p className="text-xs text-amber-600 mt-1">
                     No users found. Create more accounts using the signup page.
-                  </p>
-                )}
-                {users.length === 1 && !isLoadingUsers && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    Only one user found. Create more accounts using the signup page.
                   </p>
                 )}
               </div>

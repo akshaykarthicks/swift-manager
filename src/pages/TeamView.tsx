@@ -19,10 +19,21 @@ const TeamView = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log("TeamView: Fetching all user profiles...");
+        
+        // Fetch all users from auth.users using supabase admin access
+        const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
+        
+        if (authUsersError) {
+          console.error("Error fetching auth users:", authUsersError);
+        }
+        
+        console.log("Auth users data:", authUsersData);
+        
         // Fetch all users from Supabase profiles
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, role, created_at');
+          .select('*');
           
         if (profileError) {
           console.error("Error fetching profiles:", profileError);
@@ -31,10 +42,14 @@ const TeamView = () => {
             description: profileError.message,
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
         
+        console.log("Profile data fetched:", profileData);
+        
         if (!profileData || profileData.length === 0) {
+          console.log("No profiles found.");
           setLoading(false);
           return;
         }
@@ -48,6 +63,7 @@ const TeamView = () => {
           role: profile.role || 'member'
         }));
         
+        console.log("Formatted users:", formattedUsers);
         setUsers(formattedUsers);
         
         // Fetch all tasks from Supabase
@@ -96,6 +112,7 @@ const TeamView = () => {
           });
         }
         
+        console.log("Tasks by user:", tasksByUser);
         setUserTasks(tasksByUser);
       } catch (err) {
         console.error("Error fetching team data:", err);

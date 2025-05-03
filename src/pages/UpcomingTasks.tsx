@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { Task } from "@/types";
+import { Task, User } from "@/types";
 import { useAuth } from "@/components/auth/AuthContext";
-import { taskStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 import { TaskList } from "@/components/tasks/TaskList";
 import { format, isSameDay, startOfWeek, addDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,78 +14,147 @@ const UpcomingTasks = () => {
   const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
   const [thisWeekTasks, setThisWeekTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     if (!user) return;
     
-    // Get all tasks assigned to the user
-    const myTasks = taskStore.getMyTasks(user.id);
-    setTasks(myTasks);
+    const fetchTasks = async () => {
+      setLoading(true);
+      try {
+        // Fetch tasks from Supabase instead of local store
+        const { data: taskData, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('assigned_to', user.id);
+          
+        if (error) {
+          console.error("Error fetching tasks:", error);
+          setLoading(false);
+          return;
+        }
+        
+        // Transform task data
+        const myTasks: Task[] = taskData.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description || undefined,
+          status: task.status,
+          priority: task.priority,
+          assignedTo: task.assigned_to,
+          createdBy: task.created_by,
+          dueDate: task.due_date ? new Date(task.due_date) : undefined,
+          createdAt: new Date(task.created_at),
+          updatedAt: new Date(task.updated_at),
+          tags: task.tags || [],
+        }));
+        
+        setTasks(myTasks);
+        
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
+        const endOfCurrentWeek = addDays(startOfCurrentWeek, 6);
+        
+        // Filter overdue tasks
+        const overdue = myTasks.filter(
+          task => task.dueDate && 
+                  new Date(task.dueDate) < today && 
+                  task.status !== "completed"
+        );
+        setOverdueTasks(overdue);
+        
+        // Filter today's tasks
+        const todaysList = myTasks.filter(
+          task => task.dueDate && 
+                  isSameDay(new Date(task.dueDate), today)
+        );
+        setTodayTasks(todaysList);
+        
+        // Filter this week's tasks (excluding today and overdue)
+        const thisWeekList = myTasks.filter(
+          task => task.dueDate && 
+                  new Date(task.dueDate) > today && 
+                  new Date(task.dueDate) <= endOfCurrentWeek
+        );
+        setThisWeekTasks(thisWeekList);
+      } catch (err) {
+        console.error("Error processing task data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const endOfCurrentWeek = addDays(startOfCurrentWeek, 6);
-    
-    // Filter overdue tasks
-    const overdue = myTasks.filter(
-      task => task.dueDate && 
-              new Date(task.dueDate) < today && 
-              task.status !== "completed"
-    );
-    setOverdueTasks(overdue);
-    
-    // Filter today's tasks
-    const todaysList = myTasks.filter(
-      task => task.dueDate && 
-              isSameDay(new Date(task.dueDate), today)
-    );
-    setTodayTasks(todaysList);
-    
-    // Filter this week's tasks (excluding today and overdue)
-    const thisWeekList = myTasks.filter(
-      task => task.dueDate && 
-              new Date(task.dueDate) > today && 
-              new Date(task.dueDate) <= endOfCurrentWeek
-    );
-    setThisWeekTasks(thisWeekList);
-    
+    fetchTasks();
   }, [user]);
   
   const handleTaskAdded = (task: Task) => {
     if (!user) return;
     
-    // Refresh all task lists
-    const myTasks = taskStore.getMyTasks(user.id);
-    setTasks(myTasks);
+    // Refresh all tasks when a new task is added
+    const fetchTasks = async () => {
+      try {
+        // Fetch tasks from Supabase
+        const { data: taskData, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('assigned_to', user.id);
+          
+        if (error) {
+          console.error("Error fetching tasks:", error);
+          return;
+        }
+        
+        // Transform task data
+        const myTasks: Task[] = taskData.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description || undefined,
+          status: task.status,
+          priority: task.priority,
+          assignedTo: task.assigned_to,
+          createdBy: task.created_by,
+          dueDate: task.due_date ? new Date(task.due_date) : undefined,
+          createdAt: new Date(task.created_at),
+          updatedAt: new Date(task.updated_at),
+          tags: task.tags || [],
+        }));
+        
+        setTasks(myTasks);
+        
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
+        const endOfCurrentWeek = addDays(startOfCurrentWeek, 6);
+        
+        // Filter overdue tasks
+        const overdue = myTasks.filter(
+          task => task.dueDate && 
+                  new Date(task.dueDate) < today && 
+                  task.status !== "completed"
+        );
+        setOverdueTasks(overdue);
+        
+        // Filter today's tasks
+        const todaysList = myTasks.filter(
+          task => task.dueDate && 
+                  isSameDay(new Date(task.dueDate), today)
+        );
+        setTodayTasks(todaysList);
+        
+        // Filter this week's tasks (excluding today)
+        const thisWeekList = myTasks.filter(
+          task => task.dueDate && 
+                  new Date(task.dueDate) > today && 
+                  new Date(task.dueDate) <= endOfCurrentWeek
+        );
+        setThisWeekTasks(thisWeekList);
+      } catch (err) {
+        console.error("Error processing task data:", err);
+      }
+    };
     
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const endOfCurrentWeek = addDays(startOfCurrentWeek, 6);
-    
-    // Filter overdue tasks
-    const overdue = myTasks.filter(
-      task => task.dueDate && 
-              new Date(task.dueDate) < today && 
-              task.status !== "completed"
-    );
-    setOverdueTasks(overdue);
-    
-    // Filter today's tasks
-    const todaysList = myTasks.filter(
-      task => task.dueDate && 
-              isSameDay(new Date(task.dueDate), today)
-    );
-    setTodayTasks(todaysList);
-    
-    // Filter this week's tasks (excluding today)
-    const thisWeekList = myTasks.filter(
-      task => task.dueDate && 
-              new Date(task.dueDate) > today && 
-              new Date(task.dueDate) <= endOfCurrentWeek
-    );
-    setThisWeekTasks(thisWeekList);
+    fetchTasks();
   };
   
   return (
@@ -111,6 +180,7 @@ const UpcomingTasks = () => {
             emptyMessage="No overdue tasks found" 
             showFilters={false}
             onTaskAdded={handleTaskAdded} 
+            isLoading={loading}
           />
         </div>
       )}
@@ -122,6 +192,7 @@ const UpcomingTasks = () => {
           emptyMessage="No tasks due today" 
           showFilters={false}
           onTaskAdded={handleTaskAdded} 
+          isLoading={loading}
         />
       </div>
       
@@ -132,6 +203,7 @@ const UpcomingTasks = () => {
           emptyMessage="No tasks due this week" 
           showFilters={false}
           onTaskAdded={handleTaskAdded} 
+          isLoading={loading}
         />
       </div>
     </div>

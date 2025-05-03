@@ -40,9 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Function to convert Supabase session data to our User type
   const extractUserFromSession = async (session: Session | null): Promise<User | null> => {
-    if (!session) return null;
+    if (!session || !session.user) return null;
     
     try {
+      console.log("Extracting user from session:", session.user.id);
+      
       // Get additional user info from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -54,6 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Error fetching user profile:", profileError);
         return null;
       }
+      
+      console.log("Profile data fetched:", profileData);
       
       // Return the combined user data
       return {
@@ -75,19 +79,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Set loading to true when starting auth initialization
         setLoading(true);
         
-        // First check current session
-        const { data: { session } } = await supabase.auth.getSession();
-        const userData = await extractUserFromSession(session);
-        setUser(userData);
-        
-        // Then set up auth state change listener
+        // First set up auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log("Auth state changed:", event);
-            const userData = await extractUserFromSession(session);
-            setUser(userData);
+            if (session) {
+              const userData = await extractUserFromSession(session);
+              setUser(userData);
+            } else {
+              setUser(null);
+            }
           }
         );
+        
+        // Then check current session
+        const { data: { session } } = await supabase.auth.getSession();
+        const userData = await extractUserFromSession(session);
+        setUser(userData);
         
         setLoading(false);
         
