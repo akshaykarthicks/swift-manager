@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -324,6 +325,11 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                 {users.length === 0 && !isLoadingUsers && (
                   <p className="text-xs text-amber-600 mt-1">
                     No users found. Create more accounts using the signup page.
+                  </p>
+                )}
+                {users.length === 1 && !isLoadingUsers && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Only one user found. Create more accounts using the signup page.
                   </p>
                 )}
               </div>
