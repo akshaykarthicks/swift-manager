@@ -39,13 +39,15 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   
   const isEditing = !!task;
   
-  // Fetch users
+  // Fetch users with improved error handling and debugging
   useEffect(() => {
     const fetchUsers = async () => {
       if (!isOpen) return;
       
       setIsLoadingUsers(true);
       try {
+        console.log("Fetching users from profiles table...");
+        
         // Fetch all available users from the profiles table with improved error handling
         const { data, error } = await supabase
           .from('profiles')
@@ -62,7 +64,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
         }
         
         if (data && data.length > 0) {
-          console.log("Fetched users:", data);
+          console.log("Fetched users:", data.length, data);
           const formattedUsers = data.map(user => ({
             id: user.id,
             name: user.name || 'Anonymous',
