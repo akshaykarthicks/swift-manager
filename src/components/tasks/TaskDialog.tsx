@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       
       setIsLoadingUsers(true);
       try {
-        // Fetch all available users from the profiles table
+        // Fetch all available users from the profiles table with improved error handling
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, avatar_url');
@@ -61,7 +60,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
           return;
         }
         
-        if (data) {
+        if (data && data.length > 0) {
           console.log("Fetched users:", data);
           const formattedUsers = data.map(user => ({
             id: user.id,
@@ -69,9 +68,22 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             avatar: user.avatar_url || undefined
           }));
           setUsers(formattedUsers);
+        } else {
+          console.log("No users found or empty data array");
+          setUsers([]);
+          toast({
+            title: "No users found",
+            description: "You may need to create more user accounts",
+            variant: "default",
+          });
         }
       } catch (err) {
         console.error("Unexpected error fetching users:", err);
+        toast({
+          title: "Failed to load users",
+          description: "Please try again later",
+          variant: "destructive",
+        });
       } finally {
         setIsLoadingUsers(false);
       }
@@ -290,19 +302,30 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback>{user.name?.[0] || '?'}</AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">{user.name}</span>
-                        </div>
+                    {users.length > 0 ? (
+                      users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={user.avatar} />
+                              <AvatarFallback>{user.name?.[0] || '?'}</AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">{user.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-users" disabled>
+                        No users available. Create accounts first.
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
+                {users.length === 0 && !isLoadingUsers && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    No users found. Create more accounts using the signup page.
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">

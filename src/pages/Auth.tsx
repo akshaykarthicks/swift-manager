@@ -5,10 +5,11 @@ import { SignUpForm } from '@/components/auth/SignUpForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
+import { Loader2 } from "lucide-react";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -24,6 +25,18 @@ const Auth = () => {
   // Extract redirect path from location state
   const from = location.state?.from || '/';
 
+  // Show loading indicator while auth state is being determined
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-slate-600">Checking authentication...</span>
+        </div>
+      </div>
+    );
+  }
+  
   // Redirect to dashboard or previous page if already authenticated
   if (isAuthenticated) {
     return <Navigate to={from} replace />;

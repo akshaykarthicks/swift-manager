@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { initStore } from "@/lib/store";
 import { Loader2 } from "lucide-react";
 
@@ -15,22 +15,35 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const { isAuthenticated, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [storeInitialized, setStoreInitialized] = useState(false);
+  const [storeLoading, setStoreLoading] = useState(true);
   const location = useLocation();
-  const navigate = useNavigate();
   
   useEffect(() => {
     // Initialize the store with mock data
-    initStore();
-    setStoreInitialized(true);
+    const initializeStore = async () => {
+      try {
+        setStoreLoading(true);
+        await initStore();
+        setStoreInitialized(true);
+      } catch (error) {
+        console.error("Failed to initialize store:", error);
+      } finally {
+        setStoreLoading(false);
+      }
+    };
+    
+    initializeStore();
   }, []);
 
-  // Show loading spinner while auth is initializing
-  if (loading) {
+  // Show loading spinner while auth is initializing or store is loading
+  if (loading || storeLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center justify-center gap-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <span className="text-lg font-medium text-slate-600">Loading application...</span>
+          <span className="text-lg font-medium text-slate-600">
+            {loading ? "Checking authentication..." : "Loading application data..."}
+          </span>
         </div>
       </div>
     );
