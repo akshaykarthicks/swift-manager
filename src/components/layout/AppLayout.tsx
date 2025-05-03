@@ -32,11 +32,13 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       }
     };
     
-    initializeStore();
-  }, []);
+    if (isAuthenticated && !storeInitialized) {
+      initializeStore();
+    }
+  }, [isAuthenticated, storeInitialized]);
 
   // Show loading spinner while auth is initializing or store is loading
-  if (loading || storeLoading) {
+  if (loading || (isAuthenticated && storeLoading)) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center justify-center gap-4">

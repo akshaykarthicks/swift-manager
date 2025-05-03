@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
 
 // Configure QueryClient with optimized settings
 const queryClient = new QueryClient({
@@ -28,6 +29,15 @@ const queryClient = new QueryClient({
   },
 });
 
+const LoadingFallback = () => (
+  <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+    <div className="flex flex-col items-center justify-center gap-4">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <span className="text-lg font-medium text-slate-600">Loading application...</span>
+    </div>
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -35,11 +45,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={
-            <div className="flex h-screen w-screen items-center justify-center">
-              <div className="text-lg">Loading...</div>
-            </div>
-          }>
+          <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/login" element={<Auth />} />
               <Route path="/signup" element={<Auth />} />

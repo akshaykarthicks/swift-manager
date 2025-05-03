@@ -31,7 +31,7 @@ const Auth = () => {
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-slate-600">Checking authentication...</span>
+          <span className="text-slate-600">Loading authentication...</span>
         </div>
       </div>
     );
