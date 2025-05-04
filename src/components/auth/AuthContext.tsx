@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: session.user.id,
             name: session.user.email?.split('@')[0] || 'Anonymous',
             avatar_url: null,
-            role: 'member'
+            role: 'member' as const // Fix: Using a type assertion to specify the exact string literal type
           };
           
           const { error: insertError } = await supabase
