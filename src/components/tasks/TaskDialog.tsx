@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
         // Use noAuth flag to avoid recursive permissions when fetching all users
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, email')
+          .select('id, name, avatar_url')
           .order('name', { ascending: true });
           
         if (error) {
@@ -72,7 +73,6 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
             id: user.id,
             name: user.name || 'Anonymous',
             avatar: user.avatar_url || undefined,
-            email: user.email
           }));
           setUsers(formattedUsers);
         } else {
