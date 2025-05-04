@@ -19,18 +19,7 @@ const TeamView = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        console.log("TeamView: Fetching all user profiles...");
-        
-        // Fetch all users from auth.users using supabase admin access
-        const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
-        
-        if (authUsersError) {
-          console.error("Error fetching auth users:", authUsersError);
-        }
-        
-        console.log("Auth users data:", authUsersData);
-        
-        // Fetch all users from Supabase profiles
+        // Fetch all profiles from the profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*');
@@ -58,7 +47,8 @@ const TeamView = () => {
         const formattedUsers: User[] = profileData.map(profile => ({
           id: profile.id,
           name: profile.name || 'Anonymous',
-          email: '', // We don't have email in profiles table
+          // We don't have email in the profiles table, we'll leave it empty
+          email: '', 
           avatar: profile.avatar_url || undefined,
           role: profile.role || 'member'
         }));
@@ -78,6 +68,7 @@ const TeamView = () => {
             description: taskError.message,
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
         
@@ -213,7 +204,7 @@ const TeamView = () => {
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{user.name[0]}</AvatarFallback>
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <CardTitle className="text-base">{user.name}</CardTitle>

@@ -32,12 +32,18 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       }
     };
     
+    // Only initialize store if authenticated and not already initialized
     if (isAuthenticated && !storeInitialized) {
       initializeStore();
     }
-  }, [isAuthenticated, storeInitialized]);
+    
+    // If not authenticated and not loading, don't wait for store initialization
+    if (!isAuthenticated && !loading) {
+      setStoreLoading(false);
+    }
+  }, [isAuthenticated, storeInitialized, loading]);
 
-  // Show loading spinner while auth is initializing or store is loading
+  // Show loading spinner only if auth is initializing or if authenticated and store is loading
   if (loading || (isAuthenticated && storeLoading)) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
