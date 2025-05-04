@@ -39,7 +39,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
   
   const isEditing = !!task;
   
-  // Fetch users with improved error handling and debugging
+  // Improved users fetching with better error handling and debugging
   useEffect(() => {
     const fetchUsers = async () => {
       if (!isOpen) return;
@@ -48,7 +48,6 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
       try {
         console.log("Fetching users from profiles table...");
         
-        // Use noAuth flag to avoid recursive permissions when fetching all users
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, avatar_url')
@@ -78,11 +77,6 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
         } else {
           console.log("No users found or empty data array");
           setUsers([]);
-          toast({
-            title: "No users found",
-            description: "You may need to create more user accounts",
-            variant: "default",
-          });
         }
       } catch (err) {
         console.error("Unexpected error fetching users:", err);
@@ -309,7 +303,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {users.length > 0 ? (
+                    {users && users.length > 0 ? (
                       users.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           <div className="flex items-center gap-2">
@@ -328,7 +322,7 @@ export const TaskDialog = ({ isOpen, onClose, task, onTaskSaved }: TaskDialogPro
                     )}
                   </SelectContent>
                 </Select>
-                {users.length === 0 && !isLoadingUsers && (
+                {users && users.length === 0 && !isLoadingUsers && (
                   <p className="text-xs text-amber-600 mt-1">
                     No users found. Create more accounts using the signup page.
                   </p>
