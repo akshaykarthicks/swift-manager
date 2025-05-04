@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { User, Task } from "@/types";
+import { User } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const TeamView = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [userTasks, setUserTasks] = useState<Record<string, Task[]>>({});
+  const [userTasks, setUserTasks] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
@@ -19,7 +18,9 @@ const TeamView = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch all profiles from the profiles table
+        // Get all users from profiles table with detailed logging
+        console.log("Fetching all user profiles...");
+        
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*');
@@ -35,10 +36,10 @@ const TeamView = () => {
           return;
         }
         
-        console.log("Profile data fetched:", profileData);
+        console.log("Profiles data received:", profileData);
         
         if (!profileData || profileData.length === 0) {
-          console.log("No profiles found.");
+          console.log("No profiles found in database");
           setLoading(false);
           return;
         }
@@ -47,16 +48,15 @@ const TeamView = () => {
         const formattedUsers: User[] = profileData.map(profile => ({
           id: profile.id,
           name: profile.name || 'Anonymous',
-          // We don't have email in the profiles table, we'll leave it empty
-          email: '', 
+          email: '', // Email isn't stored in profiles table
           avatar: profile.avatar_url || undefined,
-          role: profile.role || 'member'
+          role: profile.role as 'admin' | 'manager' | 'member'
         }));
         
         console.log("Formatted users:", formattedUsers);
         setUsers(formattedUsers);
         
-        // Fetch all tasks from Supabase
+        // Fetch tasks for each user
         const { data: taskData, error: taskError } = await supabase
           .from('tasks')
           .select('*');
@@ -68,45 +68,41 @@ const TeamView = () => {
             description: taskError.message,
             variant: "destructive",
           });
-          setLoading(false);
-          return;
-        }
-        
-        // Transform task data and group by assignee
-        const tasksByUser: Record<string, Task[]> = {};
-        
-        formattedUsers.forEach(user => {
-          tasksByUser[user.id] = [];
-        });
-        
-        if (taskData) {
-          taskData.forEach((task: any) => {
-            if (task.assigned_to) {
-              if (!tasksByUser[task.assigned_to]) {
-                tasksByUser[task.assigned_to] = [];
-              }
-              
-              tasksByUser[task.assigned_to].push({
-                id: task.id,
-                title: task.title,
-                description: task.description || undefined,
-                status: task.status,
-                priority: task.priority,
-                assignedTo: task.assigned_to,
-                createdBy: task.created_by,
-                dueDate: task.due_date ? new Date(task.due_date) : undefined,
-                createdAt: new Date(task.created_at),
-                updatedAt: new Date(task.updated_at),
-                tags: task.tags || [],
-              });
-            }
+        } else {
+          console.log("Tasks data received:", taskData);
+          
+          // Group tasks by user
+          const tasksByUser: Record<string, any[]> = {};
+          
+          formattedUsers.forEach(user => {
+            tasksByUser[user.id] = [];
           });
+          
+          if (taskData) {
+            taskData.forEach((task: any) => {
+              if (task.assigned_to && tasksByUser[task.assigned_to]) {
+                tasksByUser[task.assigned_to].push({
+                  id: task.id,
+                  title: task.title,
+                  description: task.description || undefined,
+                  status: task.status,
+                  priority: task.priority,
+                  assignedTo: task.assigned_to,
+                  createdBy: task.created_by,
+                  dueDate: task.due_date ? new Date(task.due_date) : undefined,
+                  createdAt: new Date(task.created_at),
+                  updatedAt: new Date(task.updated_at),
+                  tags: task.tags || [],
+                });
+              }
+            });
+          }
+          
+          console.log("Tasks by user:", tasksByUser);
+          setUserTasks(tasksByUser);
         }
-        
-        console.log("Tasks by user:", tasksByUser);
-        setUserTasks(tasksByUser);
       } catch (err) {
-        console.error("Error fetching team data:", err);
+        console.error("Error in data fetching:", err);
         toast({
           title: "Error",
           description: "Failed to load team data. Please try again later.",
